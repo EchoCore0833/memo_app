@@ -66,5 +66,16 @@ services:
     volumes:
       - ./frontend:/usr/share/nginx/html:ro
 
+  # phpMyAdmin（MySQL管理画面）
+  phpmyadmin:
+    image: phpmyadmin:5.2.3
+    ports:
+      - "127.0.0.1:8081:80"
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: "3306"
+    depends_on:
+      - mysql
+
 volumes:
   mysqldata:
