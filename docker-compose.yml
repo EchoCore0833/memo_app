@@ -21,7 +21,7 @@ services:
     depends_on:
       - mysql
 
-  # MySQL（配布環境）
+  # MySQL（メモアプリ・配布環境共通）
   mysql:
     image: mysql:8.4.8
     environment:
@@ -29,6 +29,7 @@ services:
       MYSQL_DATABASE: ${MYSQL_DATABASE}
       MYSQL_USER: ${MYSQL_USER}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      TZ: Asia/Tokyo
     volumes:
       - mysqldata:/var/lib/mysql
       - ./docker/mysql/my.cnf:/etc/mysql/conf.d/my.cnf
@@ -48,18 +49,14 @@ services:
     environment:
       NODE_ENV: development
       PORT: "3000"
-      MONGODB_URI: mongodb://mongodb:27017/memo_app
+      DB_HOST: mysql
+      DB_PORT: "3306"
+      DB_USER: ${MYSQL_USER}
+      DB_PASSWORD: ${MYSQL_PASSWORD}
+      DB_NAME: ${MYSQL_DATABASE}
       TZ: Asia/Tokyo
     depends_on:
-      - mongodb
-
-  # MongoDB（メモアプリ）
-  mongodb:
-    image: mongo:8
-    volumes:
-      - mongodbdata:/data/db
-    environment:
-      TZ: Asia/Tokyo
+      - mysql
 
   # フロントエンド用Nginx
   frontend:
@@ -71,4 +68,3 @@ services:
 
 volumes:
   mysqldata:
-  mongodbdata:

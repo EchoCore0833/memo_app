@@ -5,11 +5,12 @@
 | 項目 | 採用技術 |
 |---|---|
 | Webサーバ | Node.js / Express |
-| データベースサーバ | MongoDB 8 |
-| 開発言語 | TypeScript |
+| データベースサーバ | MySQL 8.4.8 |
+| 開発言語 | JavaScript |
 | フレームワーク | Express |
+| データベース接続 | mysql2 |
 
-サーバーサイドでは、Node.jsとExpressを使用してWeb APIを構築する。データベースにはMongoDBを採用し、データの保存・管理を行う。開発言語にはTypeScriptを使用する。
+サーバーサイドでは、Node.jsとExpressを使用してWeb APIを構築する。データベースにはMySQL 8.4.8を採用し、メモデータの保存・管理を行う。開発言語にはJavaScriptを使用し、mysql2を利用してデータベースとの接続を行う。
 
 ## 2. クライアントサイド
 
@@ -18,7 +19,7 @@
 | 開発言語 | HTML / CSS / JavaScript |
 | フレームワーク | なし（Vanilla JavaScript） |
 
-クライアントサイドでは、HTML・CSS・JavaScriptを使用して画面を構築する。現時点では専用のフレームワークを導入せず、標準のJavaScriptで開発する。
+クライアントサイドでは、HTML・CSS・JavaScriptを使用して画面を構築する。フレームワークは使用せず、Vanilla JavaScriptによって画面操作やWeb APIとの通信を実装する。
 
 ## 3. 開発・実行環境
 
