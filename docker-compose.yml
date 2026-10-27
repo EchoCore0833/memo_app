@@ -23,16 +23,25 @@ services:
 
   # MySQL（メモアプリ・配布環境共通）
   mysql:
-    image: mysql:8.4.8
+    build:
+      context: ./docker/mysql
+      dockerfile: Dockerfile
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_DATABASE}
       MYSQL_USER: ${MYSQL_USER}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
       TZ: Asia/Tokyo
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - 'MYSQL_PWD="$${MYSQL_PASSWORD}" mysql --protocol=TCP --host=127.0.0.1 --port=3306 --user="$${MYSQL_USER}" --database="$${MYSQL_DATABASE}" --execute="SELECT 1" > /dev/null 2>&1'
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
     volumes:
       - mysqldata:/var/lib/mysql
-      - ./docker/mysql/my.cnf:/etc/mysql/conf.d/my.cnf
     ports:
       - "3306:3306"
 
@@ -56,7 +65,8 @@ services:
       DB_NAME: ${MYSQL_DATABASE}
       TZ: Asia/Tokyo
     depends_on:
-      - mysql
+      mysql:
+        condition: service_healthy
 
   # フロントエンド用Nginx
   frontend:
