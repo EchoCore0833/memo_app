@@ -1,0 +1,66 @@
+
+services:
+  # Nginx（配布環境）
+  nginx:
+    image: nginx:1.29.7
+    ports:
+      - "8000:80"
+    volumes:
+      - ./htdocs:/var/www/html
+      - ./docker/nginx:/etc/nginx/conf.d
+    depends_on:
+      - app
+
+  # PHP-FPM（配布環境）
+  app:
+    build:
+      context: ./docker/php
+      dockerfile: Dockerfile
+    volumes:
+      - ./htdocs:/var/www/html
+    depends_on:
+      - mysql
+
+  # MySQL（配布環境）
+  mysql:
+    image: mysql:8.4.8
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - mysqldata:/var/lib/mysql
+      - ./docker/mysql/my.cnf:/etc/mysql/conf.d/my.cnf
+    ports:
+      - "3306:3306"
+
+  # Node.js / Express（メモアプリ）
+  node:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    environment:
+      NODE_ENV: development
+      PORT: "3000"
+      MONGODB_URI: mongodb://mongodb:27017/memo_app
+      TZ: Asia/Tokyo
+    depends_on:
+      - mongodb
+
+  # MongoDB（メモアプリ）
+  mongodb:
+    image: mongo:8
+    volumes:
+      - mongodbdata:/data/db
+    environment:
+      TZ: Asia/Tokyo
+
+volumes:
+  mysqldata:
+  mongodbdata:

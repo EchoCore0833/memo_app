@@ -1,0 +1,26 @@
+# 環境変数・秘密情報
+.env
+.env.*
+!.env.example
+
+# Node.js
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+
+# ログ
+*.log
+npm-debug.log*
+
+# OS・エディタ
+.DS_Store
+Thumbs.db
+.vscode/
+
+# 一時ファイル
+*.tmp
+*.bak
+
+# 配布環境のphpMyAdmin
+/htdocs/phpMyAdmin/
