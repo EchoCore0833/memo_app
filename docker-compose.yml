@@ -61,6 +61,14 @@ services:
     environment:
       TZ: Asia/Tokyo
 
+  # フロントエンド用Nginx
+  frontend:
+    image: nginx:1.29.7
+    ports:
+      - "8080:80"
+    volumes:
+      - ./frontend:/usr/share/nginx/html:ro
+
 volumes:
   mysqldata:
   mongodbdata:

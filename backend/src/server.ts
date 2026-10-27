@@ -1,12 +1,17 @@
 
 import express from "express";
 import mongoose from "mongoose";
+import cors from "cors";
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
 
 const MONGODB_URI =
   process.env.MONGODB_URI || "mongodb://localhost:27017/memo_app";
+
+app.use(cors({
+  origin: "http://localhost:8080"
+}));
 
 app.use(express.json());
 
