@@ -20,6 +20,8 @@ export async function createMemo(title, content) {
     if (!response.ok) {
         throw new Error(`メモの登録に失敗しました (${response.status})`);
     }
+
+    return response.json();
 }
 
 export async function updateMemo(id, title, content) {
@@ -32,7 +34,8 @@ export async function updateMemo(id, title, content) {
     if (!response.ok) {
         throw new Error(`メモの更新に失敗しました (${response.status})`);
     }
-    
+
+    return response.json();
 }
 
 export async function deleteMemo(id) {

@@ -2,10 +2,19 @@ import pool from "../db.js";
 
 export async function getAllMemos() {
     const [rows] = await pool.query (
-        "select * from memos where deleted_at is null"
+        "select id, title, content, false as isDeleted, created_at as createdAt, updated_at as updatedAt from memos where deleted_at is null order by updated_at desc"
     );
 
     return rows;
+}
+
+export async function getMemoById(id) {
+    const [rows] = await pool.execute(
+        `select id, title, content, false as isDeleted, created_at as createdAt, updated_at as updatedAt from memos where id = ? and deleted_at is null`,
+        [id]
+    );
+
+    return rows[0] ?? null;
 }
 
 export async function insertMemo(title, content) {

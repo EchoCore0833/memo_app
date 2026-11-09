@@ -1,125 +1,206 @@
 import { fetchMemos, createMemo, updateMemo, deleteMemo } from "./api.js";
 
-const status = document.querySelector("#memo-status");
 const list = document.querySelector("#memo-list");
+const listStatus = document.querySelector("#memo-status");
+const form = document.querySelector("#memo-form");
+const titleInput = document.querySelector("#memo-title");
+const contentInput = document.querySelector("#memo-content");
+const newButton = document.querySelector("#new-memo-button");
+const deleteButton = document.querySelector("#delete-memo-button");
+const saveButton = form.querySelector('button[type="submit"]');
+const formStatus = document.querySelector("#memo-form-status");
 
-let editMemoId = null;
+let memos = [];
+let selectedId = null;
 
-async function showMemos() {
-    try {
-        const memos = await fetchMemos();
-        list.replaceChildren();
+function formatDate(value) {
+    const date = new Date(value);
 
-        for (const memo of memos) {
-            const item = document.createElement("li");
-            const title = document.createElement("strong");
-            const content = document.createElement("p"); 
+    return new Intl.DateTimeFormat("ja-JP", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit"
+    }).format(date);
+}
 
-            title.textContent = memo.title;
-            content.textContent = memo.content;
-            
-            const editButton = document.createElement("button");
-            editButton.type = "button";
-            editButton.textContent = "編集";
+function renderMemos() {
+    list.replaceChildren();
 
-            editButton.addEventListener("click", () => {
-                if (submitButton.disabled) return;
-                editMemoId = memo.id;
-                form.elements.namedItem("title").value = memo.title;
-                form.elements.namedItem("content").value = memo.content;
-                submitButton.textContent = "更新";
-                formStatus.textContent = "";
-                form.elements.namedItem("title").focus();
-            });
-            
-            const deleteButton = document.createElement("button");
-            deleteButton.type = "button";
-            deleteButton.textContent = "削除";
+    for (const memo of memos) {
+        const item = document.createElement("li");
+        const button = document.createElement("button");
+        const title = document.createElement("span");
+        const date = document.createElement("span");
 
-            deleteButton.addEventListener("click", async () => {
-                if (submitButton.disabled || !window.confirm("このメモを削除しますか？")) {
-                    return;
-                }
+        button.type = "button";
+        button.className = "memo-item";
 
-                deleteButton.disabled = true;
-                submitButton.disabled = true;
-
-                try {
-                    await deleteMemo(memo.id);
-
-                    if (editMemoId === memo.id) {
-                        editMemoId = null;
-                        form.reset();
-                        submitButton.textContent = "登録";
-                        formStatus.textContent = "";
-                    }
-
-                    await showMemos();
-                }
-                catch (error) {
-                    console.error(error);
-                    status.textContent = "メモを削除できませんでした。";
-                }
-                finally {
-                    deleteButton.disabled = false;
-                    submitButton.disabled = false;
-                }
-            });
-            item.append(title, content, editButton, deleteButton);
-
-            list.append(item);
+        if (memo.id === selectedId) {
+            button.classList.add("selected");
         }
 
-        status.textContent = memos.length === 0 ? "メモはまだありません。" : "";
+        title.className = "memo-item-title";
+        title.textContent = memo.title;
+
+        date.className = "memo-item-date";
+        date.textContent = formatDate(memo.updatedAt);
+
+        button.append(title, date);
+
+        button.addEventListener("click", () => {
+            selectMemo(memo.id);
+        });
+
+        item.append(button);
+        list.append(item);
     }
-    catch (error) {
-        console.error(error);
-        status.textContent = "メモ一覧を読み込めませんでした。";
+
+    if (memos.length === 0) {
+        listStatus.textContent = "メモはまだありません。";
+    }
+    else {
+        listStatus.textContent = "";
     }
 }
 
-showMemos();
+function selectMemo(id) {
+    const memo = memos.find((item) => item.id === id);
 
-const form = document.querySelector("#memo-form");
-const formStatus = document.querySelector("#memo-form-status");
-const submitButton = form.querySelector('button[type="submit"]');
+    if (!memo) {
+        return;
+    }
+
+    selectedId = memo.id;
+    titleInput.value = memo.title;
+    contentInput.value = memo.content;
+    deleteButton.disabled = false;
+    formStatus.textContent = "";
+
+    renderMemos();
+}
+
+function startNewMemo() {
+    selectedId = null;
+    form.reset();
+    deleteButton.disabled = true;
+    formStatus.textContent = "";
+    titleInput.focus();
+
+    renderMemos();
+}
+
+async function loadMemos() {
+    listStatus.textContent = "読み込み中...";
+
+    try {
+        memos = await fetchMemos();
+
+        if (
+            selectedId !== null &&
+            !memos.some((memo) => memo.id === selectedId)
+        ) {
+            startNewMemo();
+            return;
+        }
+
+        renderMemos();
+    }
+    catch (error) {
+        console.error(error);
+        listStatus.textContent = "メモ一覧を読み込めませんでした。";
+    }
+}
+
+newButton.addEventListener("click", () => {
+    startNewMemo();
+});
 
 form.addEventListener("submit", async (event) => {
     event.preventDefault();
 
-    const data = new FormData(form);
-    const title = data.get("title").trim();
-    const content = data.get("content");
+    const title = titleInput.value;
+    const content = contentInput.value;
+    const editingId = selectedId;
 
-    if (!title || !content.trim()) {
-        formStatus.textContent = "タイトルと本文を入力してください。";
-        return;
-    }
-
-    const memoId = editMemoId;
-    const isEditing = memoId !== null;
-    submitButton.disabled = true;
-    formStatus.textContent = isEditing ? "更新中..." : "登録中...";
+    saveButton.disabled = true;
+    deleteButton.disabled = true;
+    formStatus.textContent = "保存中...";
 
     try {
-        if (isEditing) {
-            await updateMemo(memoId, title, content);
+        let savedMemo;
+
+        if (editingId === null) {
+            savedMemo = await createMemo(title, content);
+            memos.unshift(savedMemo);
         }
         else {
-            await createMemo(title, content);
+            savedMemo = await updateMemo(editingId, title, content);
+
+            memos = memos.map((memo) => {
+                if (memo.id === editingId) {
+                    return savedMemo;
+                }
+
+                return memo;
+            });
         }
 
-        editMemoId = null;
-        form.reset();
-        submitButton.textContent = "登録";
-        formStatus.textContent = isEditing ? "メモを更新しました。" : "メモを登録しました。";
-        await showMemos();
+        selectedId = savedMemo.id;
+        titleInput.value = savedMemo.title;
+        contentInput.value = savedMemo.content;
+        deleteButton.disabled = false;
+        formStatus.textContent = "保存しました。";
+
+        renderMemos();
     }
     catch (error) {
         console.error(error);
-        formStatus.textContent = isEditing ? "メモを更新できませんでした。" : "メモを登録できませんでした。";
+        deleteButton.disabled = selectedId === null;
+        formStatus.textContent = "保存できませんでした。";
     }
     finally {
-        submitButton.disabled = false;
+        saveButton.disabled = false;
     }
 });
+
+deleteButton.addEventListener("click", async () => {
+    if (selectedId === null) {
+        return;
+    }
+
+    const deletingId = selectedId;
+
+    if (!window.confirm("このメモを削除しますか？")) {
+        return;
+    }
+
+    saveButton.disabled = true;
+    deleteButton.disabled = true;
+    formStatus.textContent = "削除中...";
+
+    try {
+        await deleteMemo(deletingId);
+
+        memos = memos.filter((memo) => {
+            return memo.id !== deletingId;
+        });
+
+        selectedId = null;
+        form.reset();
+        formStatus.textContent = "削除しました。";
+
+        renderMemos();
+    }
+    catch (error) {
+        console.error(error);
+        deleteButton.disabled = false;
+        formStatus.textContent = "削除できませんでした。";
+    }
+    finally {
+        saveButton.disabled = false;
+    }
+});
+
+loadMemos();
