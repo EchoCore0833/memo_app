@@ -7,7 +7,22 @@
 </head>
 <body>
     <h1>Memo App</h1>
-    <p>フロントエンドのDocker環境が正常に動作しています。</p>
+
+    <form id="memo-form">
+        <p>
+            <label for="memo-title">タイトル</label>
+            <input id="memo-title" name="title" type="text" maxlength="255" required>
+        </p>
+        <p>
+            <label for="memo-content">本文</label>
+            <textarea id="memo-content" name="content" required></textarea>
+        </p>
+        <button type="submit">登録</button>
+        <p id="memo-form-status" role="status"></p>
+    </form>
+
+    <p id="memo-status" role="status">読み込み中...</p>
+    <ul id="memo-list"></ul>
     <script type="module" src="js/app.js"></script>
 </body>
 </html>

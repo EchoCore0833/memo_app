@@ -2,12 +2,14 @@
 import express from "express";
 import cors from "cors";
 import pool from "./db.js";
+import memoRoutes from "./routes/memoRoutes.js";
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
 
 app.use(cors({ origin: "http://localhost:8080" }));
 app.use(express.json());
+app.use("/api/memos", memoRoutes);
 
 app.get("/", (req, res) => {
   res.send("Memo App API is running! (JavaScript + MySQL)");
