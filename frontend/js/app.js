@@ -143,10 +143,6 @@ async function loadMemos() {
                 markAsSaved(warningOptions);
                 deleteButton.disabled = true;
             }
-            else{
-                titleInput.value = selectedMemo.title;
-                contentInput.value = selectedMemo.content;
-            }
         }
 
         renderMemos();

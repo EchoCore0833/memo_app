@@ -1,33 +1,39 @@
-import { Server } from "socket.io";
+import { WebSocketServer, WebSocket } from "ws";
 
-let io;
+let wss;
 
 export function initializeMemoSocket(server) {
-    // E担当: WebSocketサーバーを初期化
-    io = new Server(server,{
-        cors: {
-            origin:"http://localhost:8080",
-            methods:["GET","POST","PUT","DELETE"]
-        }
+    wss = new WebSocketServer({
+        server,
+        path: "/ws"
     });
-    io.on("connection",(socket) =>{
-        console.log("WebSoket connected:",socket.id);
 
-        socket.on("disconnect", () =>{
-            console.log("WebSocket disconnected:", socket.id);
+    wss.on("connection", (socket) => {
+        console.log("WebSocket connected");
+
+        socket.on("close", () => {
+            console.log("WebSocket disconnected");
+        });
+
+        socket.on("error", (error) => {
+            console.error("WebSocket error:", error);
         });
     });
 
-    return io;
+    return wss;
 }
 
 export function broadcastMemoChange(event) {
-    // E担当: 接続中のブラウザに変更を通知
-    if(!io) {
+    if (!wss) {
         console.error("WebSocket server is not initialized.");
         return;
     }
 
-    io.emit("memo_changed",event);
+    const message = JSON.stringify(event);
 
+    for (const client of wss.clients) {
+        if (client.readyState === WebSocket.OPEN) {
+            client.send(message);
+        }
+    }
 }

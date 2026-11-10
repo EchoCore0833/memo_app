@@ -1,26 +1,27 @@
 export function initializeWebSocket(options = {}) {
-    // E担当: WebSocketサーバーに接続する
+    const socket = new WebSocket("ws://localhost:3000/ws");
 
-    // サーバーからメモ変更通知を受け取ったら
-    // options.onMemoChanged() を呼び出す
-    const socket = io("http://localhost:3000");
-
-    socket.on("connect", () =>{
-        console.log("WebSocket connected:", socket.id);
+    socket.addEventListener("open", () => {
+        console.log("WebSocket connected");
     });
 
-    socket.on("memo_changed", (event) =>{
-        console.log("Memo changed:", event);
+    socket.addEventListener("message", (event) => {
+        const data = JSON.parse(event.data);
 
-        if(typeof options.onMemoChanged ==="function"){
-            options.onMemoChanged(event);
+        console.log("Memo changed:", data);
+
+        if (typeof options.onMemoChanged === "function") {
+            options.onMemoChanged(data);
         }
     });
 
-    socket.on("connect_error",(error)=>{
-        console.error("WebSocket connection error:",error.message);
+    socket.addEventListener("close", () => {
+        console.log("WebSocket disconnected");
+    });
+
+    socket.addEventListener("error", (error) => {
+        console.error("WebSocket error:", error);
     });
 
     return socket;
-
 }
