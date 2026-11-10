@@ -1,4 +1,5 @@
 import { getAllMemos, getMemoById, insertMemo, updateMemo, deleteMemo } from "../models/memoModel.js";
+import { broadcastMemoChange } from "../websocket/memoSocket.js";
 
 function createDefaultTitle() {
     const date = new Intl.DateTimeFormat("en-CA", {
@@ -99,6 +100,11 @@ export async function createMemo(req, res) {
         const id = await insertMemo(input.title, input.content);
         const memo = await getMemoById(id);
 
+        broadcastMemoChange({
+            type: "memo:created",
+            memoId: id
+        });
+
         return res.status(201).json(memo);
     }
     catch (error) {
@@ -131,6 +137,11 @@ export async function editMemo(req, res) {
         }
 
         const memo = await getMemoById(id);
+
+        broadcastMemoChange({
+            type: "memo:updated",
+            memoId: id
+        })
         return res.status(200).json(memo);
     }
     catch (error) {
@@ -153,6 +164,11 @@ export async function removeMemo(req, res) {
         if (affectedRows === 0) {
             return res.status(404).json({error: "メモが見つかりません。"});
         }
+
+        broadcastMemoChange({
+            type: "memo:deleted",
+            memoId: id
+        });
 
         return res.status(204).end();
     }

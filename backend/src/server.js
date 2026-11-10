@@ -3,6 +3,7 @@ import express from "express";
 import cors from "cors";
 import pool from "./db.js";
 import memoRoutes from "./routes/memoRoutes.js";
+import { initializeMemoSocket } from "./websocket/memoSocket.js";
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
@@ -69,9 +70,11 @@ async function startServer() {
 
     console.log("MySQL connected successfully!");
 
-    app.listen(PORT, "0.0.0.0", () => {
+    const server = app.listen(PORT, "0.0.0.0", () => {
       console.log(`Server running on http://localhost:${PORT}`);
     });
+
+    initializeMemoSocket(server);
   } catch (error) {
     console.error("MySQL connection failed:", error);
     process.exit(1);

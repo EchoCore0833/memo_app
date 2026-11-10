@@ -1,4 +1,8 @@
 import { fetchMemos, createMemo, updateMemo, deleteMemo } from "./api.js";
+import { sortMemos } from "./features/sort.js";
+import { initializeDraft, restoreDraft, clearDraft } from "./features/draft.js";
+import { initializeUnsavedWarning, canLeaveMemo, markAsSaved } from "./features/unsavedWarning.js";
+import { initializeMemoSocket } from "./features/websocket.js";
 
 const list = document.querySelector("#memo-list");
 const listStatus = document.querySelector("#memo-status");
@@ -9,6 +13,19 @@ const newButton = document.querySelector("#new-memo-button");
 const deleteButton = document.querySelector("#delete-memo-button");
 const saveButton = form.querySelector('button[type="submit"]');
 const formStatus = document.querySelector("#memo-form-status");
+const sortSlect = document.querySelector("#memo-sort");
+const draftOptions = { 
+    titleInput, contentInput, form, getSlectedId: () => selectedId 
+};
+const warningOptions = { 
+    titleInput, contentInput, form 
+};
+const websocketOptions = {
+    url: `ws://${window.location.hostname}:3000`,
+    onMemoChanged: () => {
+        loadMemos();
+    }
+}
 
 let memos = [];
 let selectedId = null;
@@ -27,6 +44,8 @@ function formatDate(value) {
 
 function renderMemos() {
     list.replaceChildren();
+
+    const sorttedMemos = sortMemos(memos, sortSelect.value);
 
     for (const memo of memos) {
         const item = document.createElement("li");
@@ -66,6 +85,14 @@ function renderMemos() {
 }
 
 function selectMemo(id) {
+    if (id === selectedId) {
+        return;
+    }
+
+    if (!canLeaveMemo(warningOptions)) {
+        return;
+    }
+
     const memo = memos.find((item) => item.id === id);
 
     if (!memo) {
@@ -75,6 +102,8 @@ function selectMemo(id) {
     selectedId = memo.id;
     titleInput.value = memo.title;
     contentInput.value = memo.content;
+    restoreDraft(draftOptions);
+    markAsSaved(warningOptions);
     deleteButton.disabled = false;
     formStatus.textContent = "";
 
@@ -82,8 +111,14 @@ function selectMemo(id) {
 }
 
 function startNewMemo() {
+    if (!canLeaveMemo(warningOptions)) {
+        return;
+    }
+
     selectedId = null;
     form.reset();
+    restoreDraft(draftOptions);
+    markAsSaved(warningOptions);
     deleteButton.disabled = true;
     formStatus.textContent = "";
     titleInput.focus();
@@ -148,6 +183,7 @@ form.addEventListener("submit", async (event) => {
         }
 
         selectedId = savedMemo.id;
+        clearDraft(draftOptions);
         titleInput.value = savedMemo.title;
         contentInput.value = savedMemo.content;
         deleteButton.disabled = false;
@@ -189,7 +225,9 @@ deleteButton.addEventListener("click", async () => {
 
         selectedId = null;
         form.reset();
+        clearDraft(draftOptions);
         formStatus.textContent = "削除しました。";
+        markAsSaved(warningOptions);
 
         renderMemos();
     }
@@ -202,5 +240,13 @@ deleteButton.addEventListener("click", async () => {
         saveButton.disabled = false;
     }
 });
+
+sortSlect.addEventListener("change", () => {
+    renderMemos();
+})
+
+initializeDraft(draftOptions);
+initializeUnsavedWarning(warningOptions);
+initializeWebSocket(websocketOptions);
 
 loadMemos();
