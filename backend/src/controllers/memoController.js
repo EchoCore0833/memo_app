@@ -141,7 +141,7 @@ export async function editMemo(req, res) {
         broadcastMemoChange({
             type: "memo:updated",
             memoId: id
-        })
+        });
         return res.status(200).json(memo);
     }
     catch (error) {

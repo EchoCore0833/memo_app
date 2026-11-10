@@ -21,7 +21,6 @@ const warningOptions = {
     titleInput, contentInput, form 
 };
 const websocketOptions = {
-    url: `ws://${window.location.hostname}:3000`,
     onMemoChanged: () => {
         loadMemos();
     }
@@ -132,15 +131,26 @@ async function loadMemos() {
     try {
         memos = await fetchMemos();
 
-        if (
-            selectedId !== null &&
-            !memos.some((memo) => memo.id === selectedId)
-        ) {
-            startNewMemo();
-            return;
+        if (selectedId !== null){
+            const selectedMemo = memos.find(
+                (memo) => memo.id === selectedId
+            );
+
+            if(!selectedMemo){
+                selectedId = null;
+                form.reset();
+                clearDraft(draftOptions);
+                markAsSaved(warningOptions);
+                deleteButton.disabled = true;
+            }
+            else{
+                titleInput.value = selectedMemo.title;
+                contentInput.value = selectedMemo.content;
+            }
         }
 
         renderMemos();
+
     }
     catch (error) {
         console.error(error);
@@ -244,7 +254,7 @@ deleteButton.addEventListener("click", async () => {
 
 sortSelect.addEventListener("change", () => {
     renderMemos();
-})
+});
 
 initializeDraft(draftOptions);
 initializeUnsavedWarning(warningOptions);
