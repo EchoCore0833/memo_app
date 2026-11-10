@@ -2,7 +2,7 @@ import { fetchMemos, createMemo, updateMemo, deleteMemo } from "./api.js";
 import { sortMemos } from "./features/sort.js";
 import { initializeDraft, restoreDraft, clearDraft } from "./features/draft.js";
 import { initializeUnsavedWarning, canLeaveMemo, markAsSaved } from "./features/unsavedWarning.js";
-import { initializeMemoSocket } from "./features/websocket.js";
+import { initializeWebSocket } from "./features/websocket.js";
 
 const list = document.querySelector("#memo-list");
 const listStatus = document.querySelector("#memo-status");
@@ -13,9 +13,9 @@ const newButton = document.querySelector("#new-memo-button");
 const deleteButton = document.querySelector("#delete-memo-button");
 const saveButton = form.querySelector('button[type="submit"]');
 const formStatus = document.querySelector("#memo-form-status");
-const sortSlect = document.querySelector("#memo-sort");
+const sortSelect = document.querySelector("#memo-sort");
 const draftOptions = { 
-    titleInput, contentInput, form, getSlectedId: () => selectedId 
+    titleInput, contentInput, form, getSelectedId: () => selectedId 
 };
 const warningOptions = { 
     titleInput, contentInput, form 
@@ -45,9 +45,9 @@ function formatDate(value) {
 function renderMemos() {
     list.replaceChildren();
 
-    const sorttedMemos = sortMemos(memos, sortSelect.value);
+    const sortedMemos = sortMemos(memos, sortSelect.value);
 
-    for (const memo of memos) {
+    for (const memo of sortedMemos) {
         const item = document.createElement("li");
         const button = document.createElement("button");
         const title = document.createElement("span");
@@ -188,6 +188,7 @@ form.addEventListener("submit", async (event) => {
         contentInput.value = savedMemo.content;
         deleteButton.disabled = false;
         formStatus.textContent = "保存しました。";
+        markAsSaved(warningOptions);
 
         renderMemos();
     }
@@ -241,7 +242,7 @@ deleteButton.addEventListener("click", async () => {
     }
 });
 
-sortSlect.addEventListener("change", () => {
+sortSelect.addEventListener("change", () => {
     renderMemos();
 })
 

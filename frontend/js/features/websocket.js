@@ -1,4 +1,4 @@
-export function initializeMemoSocket(options) {
+export function initializeWebSocket(options) {
     // E担当: WebSocketサーバーに接続する
 
     // サーバーからメモ変更通知を受け取ったら
