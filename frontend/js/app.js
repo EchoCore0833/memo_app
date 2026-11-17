@@ -101,7 +101,7 @@ function selectMemo(id) {
     selectedId = memo.id;
     titleInput.value = memo.title;
     contentInput.value = memo.content;
-    restoreDraft(draftOptions);
+    // restoreDraft(draftOptions);
     markAsSaved(warningOptions);
     deleteButton.disabled = false;
     formStatus.textContent = "";
@@ -116,7 +116,7 @@ function startNewMemo() {
 
     selectedId = null;
     form.reset();
-    restoreDraft(draftOptions);
+    // restoreDraft(draftOptions);
     markAsSaved(warningOptions);
     deleteButton.disabled = true;
     formStatus.textContent = "";
@@ -256,4 +256,53 @@ initializeDraft(draftOptions);
 initializeUnsavedWarning(warningOptions);
 initializeWebSocket(websocketOptions);
 
-loadMemos();
+// loadMemos();
+async function initializeApp() {
+    await loadMemos();
+
+    const draft = restoreDraft(draftOptions);
+
+    if (draft === null) {
+        return;
+    }
+
+    const shouldRestore = window.confirm(
+        "前回の未保存の下書きがあります。復元しますか？"
+    );
+
+    if (!shouldRestore) {
+        clearDraft(draftOptions);
+        return;
+    }
+
+    if (draft.memoId === null) {
+        selectedId = null;
+
+        titleInput.value = draft.title;
+        contentInput.value = draft.content;
+
+        deleteButton.disabled = true;
+    } else {
+        const memo = memos.find((item) => {
+            return String(item.id) === String(draft.memoId);
+        });
+
+        if (memo) {
+            selectedId = memo.id;
+
+            titleInput.value = memo.title;
+            contentInput.value = memo.content;
+            markAsSaved(warningOptions);
+
+            titleInput.value = draft.title;
+            contentInput.value = draft.content;
+
+            deleteButton.disabled = false;
+            formStatus.textContent = "下書きを復元しました。";
+            renderMemos();
+        } else {
+            console.log("元のメモを確認できません");
+        }
+    }
+}
+initializeApp();
