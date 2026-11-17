@@ -1,4 +1,5 @@
 const MEMOS_URL = "http://localhost:3000/api/memos";
+export const clientId = crypto.randomUUID();
 
 export async function fetchMemos() {
     const response = await fetch(MEMOS_URL);
@@ -13,7 +14,10 @@ export async function fetchMemos() {
 export async function createMemo(title, content) {
     const response = await fetch(MEMOS_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/json"},
+        headers: {
+            "Content-Type": "application/json",
+            "X-Client-Id": clientId,
+        },
         body: JSON.stringify({ title, content}),
     });
 
@@ -27,7 +31,10 @@ export async function createMemo(title, content) {
 export async function updateMemo(id, title, content) {
     const response = await fetch(`${MEMOS_URL}/${id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+            "Content-Type": "application/json",
+            "X-Client-Id": clientId,
+        },
         body: JSON.stringify({ title, content}),
     });
 
@@ -41,6 +48,7 @@ export async function updateMemo(id, title, content) {
 export async function deleteMemo(id) {
     const response = await fetch(`${MEMOS_URL}/${id}`, {
         method: "DELETE",
+        headers: { "X-Client-Id": clientId },
     });
 
     if (!response.ok) {

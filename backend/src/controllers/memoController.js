@@ -26,12 +26,14 @@ function normalizeMemoInput(body) {
 
     if (normalizedTitle.length > 100) {
         return {
+            status: 500,
             error: "タイトルは100文字以内で入力してください。",
         };
     }
 
     if (content.length > 10000) {
         return {
+            status: 500,
             error: "本文は10,000文字以内で入力してください。",
         };
     }
@@ -91,6 +93,12 @@ export async function createMemo(req, res) {
     const input = normalizeMemoInput(req.body);
 
     if (input.error) {
+        if (input.status === 500) {
+            return res.status(500).json ({
+                message: "サーバーエラーが発生しました",
+            })
+        }
+
         return res.status(400).json({
             error: input.error,
         });
@@ -102,7 +110,8 @@ export async function createMemo(req, res) {
 
         broadcastMemoChange({
             type: "memo:created",
-            memoId: id
+            memoId: id,
+            originId: req.get("X-Client-Id") ?? "",
         });
 
         return res.status(201).json(memo);
@@ -124,6 +133,12 @@ export async function editMemo(req, res) {
     const input = normalizeMemoInput(req.body);
 
     if (input.error) {
+        if (input.status === 500) {
+            return res.status(500).json ({
+                message: "サーバーエラーが発生しました",
+            })
+        }
+        
         return res.status(400).json({
             error: input.error,
         });
@@ -140,8 +155,10 @@ export async function editMemo(req, res) {
 
         broadcastMemoChange({
             type: "memo:updated",
-            memoId: id
+            memoId: id,
+            originId: req.get("X-Client-Id") ?? "",
         });
+
         return res.status(200).json(memo);
     }
     catch (error) {
@@ -167,7 +184,8 @@ export async function removeMemo(req, res) {
 
         broadcastMemoChange({
             type: "memo:deleted",
-            memoId: id
+            memoId: id,
+            originId: req.get("X-Client-Id") ?? "",
         });
 
         return res.status(204).end();

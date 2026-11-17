@@ -1,6 +1,11 @@
 let savedTitle = "";
 let savedContent = "";
 
+export function hasUnsavedChanges({ titleInput, contentInput }) {
+    return titleInput.value !== savedTitle ||
+        contentInput.value !== savedContent;
+}
+
 export function initializeUnsavedWarning(options) {
     window.addEventListener("beforeunload", (event) => {
         const hasChanges =

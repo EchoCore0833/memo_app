@@ -4,5 +4,6 @@ create table if not exists memos(
     content text not null,
     created_at datetime not null default current_timestamp,
     updated_at datetime not null default current_timestamp on update current_timestamp,
-    deleted_at datetime default null
+    deleted_at datetime default null,
+    isDeleted BOOLEAN GENERATED ALWAYS AS (deleted_at IS NOT NULL) VIRTUAL
 );

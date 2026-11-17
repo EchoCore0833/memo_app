@@ -1,7 +1,7 @@
-import { fetchMemos, createMemo, updateMemo, deleteMemo } from "./api.js";
+import { fetchMemos, createMemo, updateMemo, deleteMemo, clientId } from "./api.js";
 import { sortMemos } from "./features/sort.js";
 import { initializeDraft, restoreDraft, clearDraft } from "./features/draft.js";
-import { initializeUnsavedWarning, canLeaveMemo, markAsSaved } from "./features/unsavedWarning.js";
+import { initializeUnsavedWarning, canLeaveMemo, markAsSaved, hasUnsavedChanges } from "./features/unsavedWarning.js";
 import { initializeWebSocket } from "./features/websocket.js";
 
 const list = document.querySelector("#memo-list");
@@ -15,16 +15,20 @@ const saveButton = form.querySelector('button[type="submit"]');
 const formStatus = document.querySelector("#memo-form-status");
 const sortSelect = document.querySelector("#memo-sort");
 const draftOptions = { 
-    titleInput, contentInput, form, getSelectedId: () => selectedId 
+    titleInput, contentInput, form, formStatus, getSelectedId: () => selectedId, hasUnsavedChanges: () => hasUnsavedChanges(warningOptions), 
 };
 const warningOptions = { 
     titleInput, contentInput, form 
 };
 const websocketOptions = {
-    onMemoChanged: () => {
-        loadMemos();
-    }
-}
+    onMemoChanged: (event) => {
+        if (event?.originId === clientId) {
+            return;
+        }
+
+        loadMemos(event);
+    },
+};
 
 let memos = [];
 let selectedId = null;
@@ -98,6 +102,7 @@ function selectMemo(id) {
         return;
     }
 
+    clearDraft(draftOptions);
     selectedId = memo.id;
     titleInput.value = memo.title;
     contentInput.value = memo.content;
@@ -125,32 +130,59 @@ function startNewMemo() {
     renderMemos();
 }
 
-async function loadMemos() {
+async function loadMemos(event) {
     listStatus.textContent = "読み込み中...";
 
     try {
         memos = await fetchMemos();
 
-        if (selectedId !== null){
+        if (selectedId !== null) {
             const selectedMemo = memos.find(
                 (memo) => memo.id === selectedId
             );
 
-            if(!selectedMemo){
+            if (!selectedMemo) {
+                const wasEditing = hasUnsavedChanges(warningOptions);
+                const title = titleInput.value;
+                const content = contentInput.value;
+
                 selectedId = null;
                 form.reset();
                 clearDraft(draftOptions);
                 markAsSaved(warningOptions);
                 deleteButton.disabled = true;
+
+                if (wasEditing) {
+                    titleInput.value = title;
+                    contentInput.value = content;
+                    form.dispatchEvent(new Event("input", { bubbles: true }));
+                    formStatus.textContent =
+                        "他端末で削除されました。編集内容は新規メモとして保存できます。";
+                } else {
+                    formStatus.textContent = "";
+                }
+            } else if (
+                event?.type === "memo:updated" &&
+                event.memoId === selectedId
+            ) {
+                if (hasUnsavedChanges(warningOptions)) {
+                    formStatus.textContent = "他端末で更新されました。";
+                } else {
+                    titleInput.value = selectedMemo.title;
+                    contentInput.value = selectedMemo.content;
+                    markAsSaved(warningOptions);
+                }
             }
         }
 
         renderMemos();
+        return true;
 
     }
     catch (error) {
         console.error(error);
         listStatus.textContent = "メモ一覧を読み込めませんでした。";
+        return false;
     }
 }
 
@@ -258,7 +290,10 @@ initializeWebSocket(websocketOptions);
 
 // loadMemos();
 async function initializeApp() {
-    await loadMemos();
+    const loaded = await loadMemos();
+    if (!loaded) {
+        return;
+    }
 
     const draft = restoreDraft(draftOptions);
 
@@ -301,7 +336,7 @@ async function initializeApp() {
             formStatus.textContent = "下書きを復元しました。";
             renderMemos();
         } else {
-            console.log("元のメモを確認できません");
+            clearDraft(draftOptions);
         }
     }
 }

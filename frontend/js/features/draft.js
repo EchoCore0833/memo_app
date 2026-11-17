@@ -1,17 +1,33 @@
 export function initializeDraft(options) {
-    // C担当: 入力中の下書きを自動保存する処理
-    const { titleInput, contentInput, form, getSelectedId } = options;
+    const {
+        titleInput,
+        contentInput,
+        form,
+        formStatus,
+        getSelectedId,
+        hasUnsavedChanges,
+    } = options;
+
+    const savedMessage = "下書きを保存しました。";
 
     form.addEventListener("input", () => {
+        if (!hasUnsavedChanges()) {
+            clearDraft();
+            if (formStatus.textContent === savedMessage) {
+                formStatus.textContent = "";
+            }
+            return;
+        }
 
         const draft = {
             memoId: getSelectedId(),
             title: titleInput.value,
-            content: contentInput.value
+            content: contentInput.value,
         };
 
         try {
             localStorage.setItem("memo-app:draft", JSON.stringify(draft));
+            formStatus.textContent = savedMessage;
         } catch (error) {
             console.error("自動保存に失敗しました", error);
         }
